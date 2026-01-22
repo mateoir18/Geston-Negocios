@@ -1,7 +1,7 @@
 package com.negocios.model;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 @Entity
 @Table(name = "roles")
@@ -11,7 +11,7 @@ public class Rol {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	@NotBlank(message = "El nombre del rol es obligatorio")
+	@NotNull(message = "El nombre del rol es obligatorio")
 	@Column(name = "nombre_rol", nullable = false, unique = true, length = 50)
 	@Enumerated(EnumType.STRING)
 	private NombreRol nombreRol;
