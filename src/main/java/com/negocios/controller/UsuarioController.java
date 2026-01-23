@@ -2,12 +2,15 @@ package com.negocios.controller;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.negocios.dto.UsuarioDTO;
+import com.negocios.mapper.UsuarioMapper;
 import com.negocios.model.Usuario;
 import com.negocios.repository.UsuarioRepository;
 
@@ -21,41 +24,47 @@ public class UsuarioController {
 	@Autowired
 	private UsuarioRepository usuarioRepository;
 
+	@Autowired
+	private UsuarioMapper usuarioMapper;
+
 	// Obtener todos los usuarios
 	@GetMapping
-	public ResponseEntity<List<Usuario>> getAllUsuarios() {
-		List<Usuario> usuarios = usuarioRepository.findAll();
+	public ResponseEntity<List<UsuarioDTO>> getAllUsuarios() {
+		List<UsuarioDTO> usuarios = usuarioRepository.findAll().stream().map(usuarioMapper::toDTO)
+				.collect(Collectors.toList());
 		return ResponseEntity.ok(usuarios);
 	}
 
 	// Obtener usuario por ID
 	@GetMapping("/{id}")
-	public ResponseEntity<Usuario> getUsuarioById(@PathVariable UUID id) {
-		return usuarioRepository.findById(id).map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
+	public ResponseEntity<UsuarioDTO> getUsuarioById(@PathVariable UUID id) {
+		return usuarioRepository.findById(id).map(usuarioMapper::toDTO).map(ResponseEntity::ok)
+				.orElse(ResponseEntity.notFound().build());
 	}
 
 	// Obtener usuarios por negocio
 	@GetMapping("/negocio/{negocioId}")
-	public ResponseEntity<List<Usuario>> getUsuariosByNegocio(@PathVariable UUID negocioId) {
-		List<Usuario> usuarios = usuarioRepository.findByNegocioId(negocioId);
+	public ResponseEntity<List<UsuarioDTO>> getUsuariosByNegocio(@PathVariable UUID negocioId) {
+		List<UsuarioDTO> usuarios = usuarioRepository.findByNegocioId(negocioId).stream().map(usuarioMapper::toDTO)
+				.collect(Collectors.toList());
 		return ResponseEntity.ok(usuarios);
 	}
 
 	// Crear un nuevo usuario
 	@PostMapping
-	public ResponseEntity<Usuario> createUsuario(@Valid @RequestBody Usuario usuario) {
+	public ResponseEntity<UsuarioDTO> createUsuario(@Valid @RequestBody Usuario usuario) {
 		// Verificar si ya existe un usuario con ese email
 		if (usuarioRepository.existsByEmail(usuario.getEmail())) {
 			return ResponseEntity.status(HttpStatus.CONFLICT).build();
 		}
 
 		Usuario nuevoUsuario = usuarioRepository.save(usuario);
-		return ResponseEntity.status(HttpStatus.CREATED).body(nuevoUsuario);
+		return ResponseEntity.status(HttpStatus.CREATED).body(usuarioMapper.toDTO(nuevoUsuario));
 	}
 
 	// Actualizar un usuario
 	@PutMapping("/{id}")
-	public ResponseEntity<Usuario> updateUsuario(@PathVariable UUID id,
+	public ResponseEntity<UsuarioDTO> updateUsuario(@PathVariable UUID id,
 			@Valid @RequestBody Usuario usuarioActualizado) {
 		return usuarioRepository.findById(id).map(usuario -> {
 			usuario.setEmail(usuarioActualizado.getEmail());
@@ -65,7 +74,7 @@ public class UsuarioController {
 				usuario.setPasswordHash(usuarioActualizado.getPasswordHash());
 			}
 			Usuario actualizado = usuarioRepository.save(usuario);
-			return ResponseEntity.ok(actualizado);
+			return ResponseEntity.ok(usuarioMapper.toDTO(actualizado));
 		}).orElse(ResponseEntity.notFound().build());
 	}
 
@@ -80,7 +89,8 @@ public class UsuarioController {
 
 	// Buscar usuario por email
 	@GetMapping("/email/{email}")
-	public ResponseEntity<Usuario> getUsuarioByEmail(@PathVariable String email) {
-		return usuarioRepository.findByEmail(email).map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
+	public ResponseEntity<UsuarioDTO> getUsuarioByEmail(@PathVariable String email) {
+		return usuarioRepository.findByEmail(email).map(usuarioMapper::toDTO).map(ResponseEntity::ok)
+				.orElse(ResponseEntity.notFound().build());
 	}
 }
