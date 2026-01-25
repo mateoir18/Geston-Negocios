@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import com.negocios.dto.UsuarioDTO;
@@ -26,6 +27,9 @@ public class UsuarioController {
 
 	@Autowired
 	private UsuarioMapper usuarioMapper;
+
+	@Autowired
+	private PasswordEncoder passwordEncoder;
 
 	// Obtener todos los usuarios
 	@GetMapping
@@ -48,18 +52,6 @@ public class UsuarioController {
 		List<UsuarioDTO> usuarios = usuarioRepository.findByNegocioId(negocioId).stream().map(usuarioMapper::toDTO)
 				.collect(Collectors.toList());
 		return ResponseEntity.ok(usuarios);
-	}
-
-	// Crear un nuevo usuario
-	@PostMapping
-	public ResponseEntity<UsuarioDTO> createUsuario(@Valid @RequestBody Usuario usuario) {
-		// Verificar si ya existe un usuario con ese email
-		if (usuarioRepository.existsByEmail(usuario.getEmail())) {
-			return ResponseEntity.status(HttpStatus.CONFLICT).build();
-		}
-
-		Usuario nuevoUsuario = usuarioRepository.save(usuario);
-		return ResponseEntity.status(HttpStatus.CREATED).body(usuarioMapper.toDTO(nuevoUsuario));
 	}
 
 	// Actualizar un usuario
