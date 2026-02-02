@@ -5,9 +5,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import com.negocios.dto.UsuarioDTO;
@@ -27,9 +25,6 @@ public class UsuarioController {
 
 	@Autowired
 	private UsuarioMapper usuarioMapper;
-
-	@Autowired
-	private PasswordEncoder passwordEncoder;
 
 	// Obtener todos los usuarios
 	@GetMapping
@@ -57,14 +52,23 @@ public class UsuarioController {
 	// Actualizar un usuario
 	@PutMapping("/{id}")
 	public ResponseEntity<UsuarioDTO> updateUsuario(@PathVariable UUID id,
-			@Valid @RequestBody Usuario usuarioActualizado) {
+			@RequestBody Usuario usuarioActualizado) { // QUITAMOS @Valid
 		return usuarioRepository.findById(id).map(usuario -> {
 			usuario.setEmail(usuarioActualizado.getEmail());
 			usuario.setNombreCompleto(usuarioActualizado.getNombreCompleto());
-			// Solo actualizar la contraseña si se proporciona
-			if (usuarioActualizado.getPasswordHash() != null && !usuarioActualizado.getPasswordHash().isEmpty()) {
+			
+			// Solo actualizar el rol si se proporciona
+			if (usuarioActualizado.getRol() != null) {
+				usuario.setRol(usuarioActualizado.getRol());
+			}
+			
+			// Solo actualizar la contraseña si se proporciona y no está vacía
+			if (usuarioActualizado.getPasswordHash() != null 
+					&& !usuarioActualizado.getPasswordHash().isEmpty()
+					&& !usuarioActualizado.getPasswordHash().equals("null")) {
 				usuario.setPasswordHash(usuarioActualizado.getPasswordHash());
 			}
+			
 			Usuario actualizado = usuarioRepository.save(usuario);
 			return ResponseEntity.ok(usuarioMapper.toDTO(actualizado));
 		}).orElse(ResponseEntity.notFound().build());

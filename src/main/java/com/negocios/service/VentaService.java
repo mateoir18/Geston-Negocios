@@ -11,7 +11,9 @@ import org.springframework.transaction.annotation.Transactional;
 import com.negocios.dto.VentaDTO;
 import com.negocios.mapper.VentaMapper;
 import com.negocios.model.DetalleVenta;
+import com.negocios.model.Producto;
 import com.negocios.model.Venta;
+import com.negocios.repository.ProductoRepository;
 import com.negocios.repository.VentaRepository;
 
 @Service
@@ -19,6 +21,9 @@ public class VentaService {
 
 	@Autowired
 	private VentaRepository ventaRepository;
+
+	@Autowired
+	private ProductoRepository productoRepository;
 
 	@Autowired
 	private VentaMapper ventaMapper;
@@ -29,6 +34,23 @@ public class VentaService {
 		if (venta.getDetalles() != null && !venta.getDetalles().isEmpty()) {
 			for (DetalleVenta detalle : venta.getDetalles()) {
 				detalle.setVenta(venta);
+
+				// Cargar el producto completo desde la base de datos
+				UUID productoId = detalle.getProducto().getId();
+				Producto producto = productoRepository.findById(productoId)
+						.orElseThrow(() -> new RuntimeException("Producto no encontrado con ID: " + productoId));
+
+				// Verificar que hay suficiente stock
+				if (producto.getStockActual() < detalle.getCantidad()) {
+					throw new RuntimeException("Stock insuficiente para el producto: " + producto.getNombre());
+				}
+
+				// Restar el stock
+				producto.setStockActual(producto.getStockActual() - detalle.getCantidad());
+				productoRepository.save(producto);
+
+				// Asignar el producto completo al detalle
+				detalle.setProducto(producto);
 			}
 		}
 
